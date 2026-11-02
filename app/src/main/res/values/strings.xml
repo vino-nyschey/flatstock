@@ -1,0 +1,142 @@
+<resources>
+    <string name="app_name">FlatStock</string>
+    <string name="tagline">Shared supplies for your flat: see what\'s running low, record who bought what and split the cost.</string>
+    <!-- The web version for iPhones; set after the Firebase project is created. -->
+    <string name="web_url" translatable="false">https://flatstock-wg.web.app</string>
+
+    <string name="not_configured_title">Firebase not set up</string>
+    <string name="not_configured_body">This build has no app/google-services.json. Follow README > Developers to connect it to a Firebase project, then build again.</string>
+
+    <string name="your_name">Your name</string>
+    <string name="your_name_hint">Shown to your flatmates</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="password_hint">At least 6 characters</string>
+    <string name="sign_in">Sign in</string>
+    <string name="create_account">Create account</string>
+    <string name="have_account">Already have an account? Sign in</string>
+    <string name="no_account">New here? Create an account</string>
+    <string name="forgot_password">Forgot password?</string>
+    <string name="enter_email_first">Enter your email address first.</string>
+    <string name="reset_sent">Password reset email sent.</string>
+    <string name="privacy_body">Your name, email address and your WG\'s supplies and purchases are stored in Google Firebase (EU/US) and shared only with the members of your WG.</string>
+    <string name="verify_title">Confirm your email</string>
+    <string name="verify_body">We sent a confirmation link to %s. Open it, then come back and tap the button below.</string>
+    <string name="verify_done">I\'ve confirmed my email</string>
+    <string name="verify_resend">Send the link again</string>
+    <string name="verify_resent">Link sent again.</string>
+    <string name="verify_not_yet">Not confirmed yet – check your inbox and spam folder.</string>
+    <string name="sign_out">Sign out</string>
+    <string name="signed_in_as">Signed in as %s</string>
+    <string name="error_email_not_verified">Please confirm your email first: open the link we sent you, then sign out and sign in again.</string>
+    <string name="error_permission_denied">No access yet. Sign out, sign in again and try once more. If it still fails, ask your flatmate to send a new invitation.</string>
+
+    <string name="setup_title">Join or start a WG</string>
+    <string name="invites_for_you">Invitations for you</string>
+    <string name="invite_from">Invited by %s</string>
+    <string name="join">Join</string>
+    <string name="decline">Decline</string>
+    <string name="create_wg_title">Start a new WG</string>
+    <string name="wg_name">WG name, e.g. \"Kastanienallee 12\"</string>
+    <string name="create_wg_hint">We add a starter list (dishwasher tabs, toilet paper, oil, salt …). You can change it any time.</string>
+    <string name="create">Create</string>
+    <string name="setup_hint">Waiting for an invitation? Ask a flatmate to invite %s.</string>
+
+    <string name="tab_supplies">Supplies</string>
+    <string name="tab_money">Money</string>
+    <string name="tab_wg">WG</string>
+
+    <string name="level_full">Full</string>
+    <string name="level_low">Low</string>
+    <string name="level_out">Out</string>
+    <string name="section_out">Out (%d)</string>
+    <string name="section_low">Running low (%d)</string>
+    <string name="section_full">In stock (%d)</string>
+    <string name="supplies_empty">No supplies yet. Add the first one with the button below.</string>
+    <string name="add_supply">Add item</string>
+    <string name="edit_supply">Edit item</string>
+    <string name="marked_by">Marked by %1$s · %2$s</string>
+    <string name="bought">Bought</string>
+    <string name="name">Name</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+
+    <string name="bought_title">Bought %s</string>
+    <string name="add_purchase">Add a purchase</string>
+    <string name="what_bought">What did you buy?</string>
+    <string name="cost_optional">Cost (optional)</string>
+    <string name="paid_by">Paid by</string>
+    <string name="shared_by">Shared by</string>
+    <string name="each_pays">%1$s each for %2$d people</string>
+    <string name="pick_someone">Pick at least one flatmate.</string>
+    <string name="no_cost_hint">Without a cost the purchase is only noted; nobody owes anything.</string>
+    <string name="purchase_saved">Purchase saved</string>
+
+    <string name="your_balance">Your balance</string>
+    <string name="you_are_owed">You get %s back</string>
+    <string name="you_owe">You owe %s</string>
+    <string name="all_settled">All settled up</string>
+    <string name="who_owes_whom">Who owes whom</string>
+    <string name="nobody_owes">Nobody owes anything.</string>
+    <string name="owes_line">%1$s → %2$s: %3$s</string>
+    <string name="settle_up">Settle up</string>
+    <string name="settle_body">%1$s paid %2$s:</string>
+    <string name="amount">Amount</string>
+    <string name="record_payment">Record payment</string>
+    <string name="payment_saved">Payment recorded</string>
+    <string name="balances">Balances</string>
+    <string name="left_wg">(left)</string>
+    <string name="history">History</string>
+    <string name="history_empty">No purchases yet.</string>
+    <string name="history_purchase">%1$s bought %2$s for %3$s</string>
+    <string name="history_purchase_no_cost">%1$s bought %2$s</string>
+    <string name="history_shared">shared by %s</string>
+    <string name="history_payment">%1$s paid %2$s %3$s</string>
+    <string name="delete_entry_title">Delete this entry?</string>
+    <string name="delete_entry_body">Balances are recalculated for everyone.</string>
+
+    <string name="members">Members</string>
+    <string name="you">(you)</string>
+    <string name="change_name">Change your name</string>
+    <string name="rename_wg">Rename WG</string>
+    <string name="invite_title">Invite a flatmate</string>
+    <string name="invite_body_hint">They sign up with this email address and find the invitation in the app.</string>
+    <string name="invite_send">Invite</string>
+    <string name="invite_saved">Invitation saved. Send the email that just opened.</string>
+    <string name="invite_no_mail_app">Invitation saved. No email app found – tell them to sign up with that address.</string>
+    <string name="invites_pending">Waiting for</string>
+    <string name="invite_subject">Join our WG \"%s\" on FlatStock</string>
+    <string name="invite_mail_body">Hi!\n\n%2$s invited you to the WG \"%1$s\" on FlatStock, where we keep track of shared supplies and split the cost.\n\n1. Android: install FlatStock. iPhone: open %4$s in Safari and choose Share > Add to Home Screen.\n2. Create an account with this email address: %3$s\n3. Confirm your email, then tap Join.\n</string>
+    <string name="reminders">Reminders</string>
+    <string name="reminders_hint">You get a notification when a flatmate marks something low or out. Also remind me of everything that\'s low:</string>
+    <string name="summary_daily">Every day at 9:00</string>
+    <string name="summary_weekly">Saturdays at 9:00</string>
+    <string name="summary_off">Never</string>
+    <string name="language">Language</string>
+    <string name="lang_system">Phone setting</string>
+    <string name="leave_wg">Leave WG</string>
+    <string name="leave_wg_body">You will no longer see \"%s\". Open balances stay so your flatmates can still settle up with you.</string>
+
+    <string name="channel_alerts">Running out</string>
+    <string name="channel_summary">What\'s low</string>
+    <string name="notif_out_one">%s is out</string>
+    <string name="notif_low_one">%s is running low</string>
+    <string name="notif_alert_many">%d supplies need buying</string>
+    <string name="notif_marked_out">%1$s marked %2$s as out</string>
+    <string name="notif_marked_low">%1$s marked %2$s as low</string>
+    <string name="notif_summary_title">%1$s: %2$d things to buy</string>
+
+    <string-array name="starter_supplies">
+        <item>Dishwasher tabs</item>
+        <item>Toilet paper</item>
+        <item>Kitchen roll</item>
+        <item>Washing-up liquid</item>
+        <item>All-purpose cleaner</item>
+        <item>Bin bags</item>
+        <item>Hand soap</item>
+        <item>Sponges</item>
+        <item>Cooking oil</item>
+        <item>Salt</item>
+    </string-array>
+</resources>

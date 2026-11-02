@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A house with a three-step stock gauge: "shared supplies, at a glance". -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,30l26,21h-7v27h-38v-27h-7z" />
+    <path
+        android:fillColor="#00796B"
+        android:pathData="M42,68h6v5h-6z M51,62h6v11h-6z M60,56h6v17h-6z" />
+</vector>

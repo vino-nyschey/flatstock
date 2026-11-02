@@ -1,0 +1,139 @@
+<resources>
+    <string name="tagline">Gemeinsame Vorräte für eure WG: sehen, was zur Neige geht, festhalten, wer was gekauft hat, und die Kosten teilen.</string>
+
+    <string name="not_configured_title">Firebase nicht eingerichtet</string>
+    <string name="not_configured_body">Diesem Build fehlt app/google-services.json. Folge README > Developers, um ein Firebase-Projekt zu verbinden, und baue neu.</string>
+
+    <string name="your_name">Dein Name</string>
+    <string name="your_name_hint">Für deine Mitbewohner sichtbar</string>
+    <string name="email">E-Mail</string>
+    <string name="password">Passwort</string>
+    <string name="password_hint">Mindestens 6 Zeichen</string>
+    <string name="sign_in">Anmelden</string>
+    <string name="create_account">Konto erstellen</string>
+    <string name="have_account">Schon ein Konto? Anmelden</string>
+    <string name="no_account">Neu hier? Konto erstellen</string>
+    <string name="forgot_password">Passwort vergessen?</string>
+    <string name="enter_email_first">Gib zuerst deine E-Mail-Adresse ein.</string>
+    <string name="reset_sent">E-Mail zum Zurücksetzen gesendet.</string>
+    <string name="privacy_body">Dein Name, deine E-Mail-Adresse sowie die Vorräte und Einkäufe deiner WG werden in Google Firebase (EU/USA) gespeichert und nur mit den Mitgliedern deiner WG geteilt.</string>
+    <string name="verify_title">E-Mail bestätigen</string>
+    <string name="verify_body">Wir haben einen Bestätigungslink an %s geschickt. Öffne ihn, komm zurück und tippe auf den Button unten.</string>
+    <string name="verify_done">Ich habe meine E-Mail bestätigt</string>
+    <string name="verify_resend">Link erneut senden</string>
+    <string name="verify_resent">Link erneut gesendet.</string>
+    <string name="verify_not_yet">Noch nicht bestätigt – schau in deinen Posteingang und Spam-Ordner.</string>
+    <string name="sign_out">Abmelden</string>
+    <string name="signed_in_as">Angemeldet als %s</string>
+    <string name="error_email_not_verified">Bitte bestätige zuerst deine E-Mail: Öffne den Link, den wir dir geschickt haben, melde dich dann ab und wieder an.</string>
+    <string name="error_permission_denied">Noch kein Zugriff. Melde dich ab, wieder an und versuch es noch einmal. Klappt es weiterhin nicht, bitte deine Mitbewohnerin oder deinen Mitbewohner um eine neue Einladung.</string>
+
+    <string name="setup_title">WG beitreten oder gründen</string>
+    <string name="invites_for_you">Einladungen für dich</string>
+    <string name="invite_from">Eingeladen von %s</string>
+    <string name="join">Beitreten</string>
+    <string name="decline">Ablehnen</string>
+    <string name="create_wg_title">Neue WG anlegen</string>
+    <string name="wg_name">Name der WG, z. B. \"Kastanienallee 12\"</string>
+    <string name="create_wg_hint">Wir legen eine Startliste an (Spülmaschinentabs, Klopapier, Öl, Salz …). Du kannst sie jederzeit ändern.</string>
+    <string name="create">Anlegen</string>
+    <string name="setup_hint">Wartest du auf eine Einladung? Bitte jemanden aus der WG, %s einzuladen.</string>
+
+    <string name="tab_supplies">Vorräte</string>
+    <string name="tab_money">Geld</string>
+    <string name="tab_wg">WG</string>
+
+    <string name="level_full">Voll</string>
+    <string name="level_low">Knapp</string>
+    <string name="level_out">Leer</string>
+    <string name="section_out">Leer (%d)</string>
+    <string name="section_low">Wird knapp (%d)</string>
+    <string name="section_full">Vorrätig (%d)</string>
+    <string name="supplies_empty">Noch keine Vorräte. Füge mit dem Button unten den ersten hinzu.</string>
+    <string name="add_supply">Hinzufügen</string>
+    <string name="edit_supply">Bearbeiten</string>
+    <string name="marked_by">Markiert von %1$s · %2$s</string>
+    <string name="bought">Gekauft</string>
+    <string name="name">Name</string>
+    <string name="save">Speichern</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="delete">Löschen</string>
+
+    <string name="bought_title">%s gekauft</string>
+    <string name="add_purchase">Einkauf eintragen</string>
+    <string name="what_bought">Was hast du gekauft?</string>
+    <string name="cost_optional">Kosten (optional)</string>
+    <string name="paid_by">Bezahlt von</string>
+    <string name="shared_by">Geteilt mit</string>
+    <string name="each_pays">%1$s pro Person für %2$d Personen</string>
+    <string name="pick_someone">Wähle mindestens eine Person.</string>
+    <string name="no_cost_hint">Ohne Kosten wird der Einkauf nur notiert; niemand schuldet etwas.</string>
+    <string name="purchase_saved">Einkauf gespeichert</string>
+
+    <string name="your_balance">Dein Saldo</string>
+    <string name="you_are_owed">Du bekommst %s zurück</string>
+    <string name="you_owe">Du schuldest %s</string>
+    <string name="all_settled">Alles ausgeglichen</string>
+    <string name="who_owes_whom">Wer schuldet wem</string>
+    <string name="nobody_owes">Niemand schuldet etwas.</string>
+    <string name="owes_line">%1$s → %2$s: %3$s</string>
+    <string name="settle_up">Ausgleichen</string>
+    <string name="settle_body">%1$s hat %2$s bezahlt:</string>
+    <string name="amount">Betrag</string>
+    <string name="record_payment">Zahlung eintragen</string>
+    <string name="payment_saved">Zahlung eingetragen</string>
+    <string name="balances">Salden</string>
+    <string name="left_wg">(ausgezogen)</string>
+    <string name="history">Verlauf</string>
+    <string name="history_empty">Noch keine Einkäufe.</string>
+    <string name="history_purchase">%1$s hat %2$s für %3$s gekauft</string>
+    <string name="history_purchase_no_cost">%1$s hat %2$s gekauft</string>
+    <string name="history_shared">geteilt mit %s</string>
+    <string name="history_payment">%1$s hat %2$s %3$s gezahlt</string>
+    <string name="delete_entry_title">Eintrag löschen?</string>
+    <string name="delete_entry_body">Die Salden werden für alle neu berechnet.</string>
+
+    <string name="members">Mitglieder</string>
+    <string name="you">(du)</string>
+    <string name="change_name">Namen ändern</string>
+    <string name="rename_wg">WG umbenennen</string>
+    <string name="invite_title">Mitbewohner einladen</string>
+    <string name="invite_body_hint">Sie registrieren sich mit dieser E-Mail-Adresse und finden die Einladung in der App.</string>
+    <string name="invite_send">Einladen</string>
+    <string name="invite_saved">Einladung gespeichert. Schick die E-Mail ab, die sich gerade geöffnet hat.</string>
+    <string name="invite_no_mail_app">Einladung gespeichert. Keine E-Mail-App gefunden – sag der Person, sie soll sich mit dieser Adresse registrieren.</string>
+    <string name="invites_pending">Ausstehend</string>
+    <string name="invite_subject">Tritt unserer WG \"%s\" bei FlatStock bei</string>
+    <string name="invite_mail_body">Hallo!\n\n%2$s hat dich in die WG \"%1$s\" bei FlatStock eingeladen. Dort behalten wir den Überblick über gemeinsame Vorräte und teilen die Kosten.\n\n1. Android: FlatStock installieren. iPhone: %4$s in Safari öffnen und Teilen > Zum Home-Bildschirm wählen.\n2. Ein Konto mit dieser E-Mail-Adresse erstellen: %3$s\n3. E-Mail bestätigen, dann auf Beitreten tippen.\n</string>
+    <string name="reminders">Erinnerungen</string>
+    <string name="reminders_hint">Du bekommst eine Benachrichtigung, wenn jemand etwas als knapp oder leer markiert. Zusätzlich an alles Knappe erinnern:</string>
+    <string name="summary_daily">Jeden Tag um 9:00</string>
+    <string name="summary_weekly">Samstags um 9:00</string>
+    <string name="summary_off">Nie</string>
+    <string name="language">Sprache</string>
+    <string name="lang_system">Wie am Handy</string>
+    <string name="leave_wg">WG verlassen</string>
+    <string name="leave_wg_body">Du siehst \"%s\" dann nicht mehr. Offene Salden bleiben, damit deine Mitbewohner noch mit dir abrechnen können.</string>
+
+    <string name="channel_alerts">Geht zur Neige</string>
+    <string name="channel_summary">Was knapp ist</string>
+    <string name="notif_out_one">%s ist leer</string>
+    <string name="notif_low_one">%s wird knapp</string>
+    <string name="notif_alert_many">%d Vorräte müssen gekauft werden</string>
+    <string name="notif_marked_out">%1$s hat %2$s als leer markiert</string>
+    <string name="notif_marked_low">%1$s hat %2$s als knapp markiert</string>
+    <string name="notif_summary_title">%1$s: %2$d Dinge zu kaufen</string>
+
+    <string-array name="starter_supplies">
+        <item>Spülmaschinentabs</item>
+        <item>Klopapier</item>
+        <item>Küchenrolle</item>
+        <item>Spülmittel</item>
+        <item>Allzweckreiniger</item>
+        <item>Müllbeutel</item>
+        <item>Handseife</item>
+        <item>Schwämme</item>
+        <item>Speiseöl</item>
+        <item>Salz</item>
+    </string-array>
+</resources>
