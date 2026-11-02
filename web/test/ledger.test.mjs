@@ -1,7 +1,7 @@
 // Same cases as the Android LedgerTest/AlertsTest. Run: node --test "web/test/*.test.mjs"
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { splitEqually, balances, settle, parseCents, newAlerts, lowSummary } from "../js/ledger.js";
+import { splitEqually, balances, settle, parseCents, newAlerts, lowSummary, levelForCount } from "../js/ledger.js";
 
 const obj = (map) => Object.fromEntries(map);
 
@@ -72,4 +72,10 @@ test("alerts and summary", () => {
   ];
   assert.deepEqual(newAlerts(s, 100, "me").map((x) => x.name), ["Toilet paper", "Salt"]);
   assert.deepEqual(lowSummary(s).map((x) => x.name), ["Bin bags", "Oil", "Toilet paper", "Salt"]);
+});
+
+test("level follows pack count", () => {
+  assert.equal(levelForCount(0, "FULL"), "OUT");
+  assert.equal(levelForCount(12, "OUT"), "FULL");
+  assert.equal(levelForCount(1, "LOW"), "LOW");
 });

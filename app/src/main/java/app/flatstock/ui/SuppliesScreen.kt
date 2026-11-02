@@ -22,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -31,6 +32,7 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
@@ -48,7 +50,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -99,6 +103,7 @@ fun SuppliesScreen(wg: Wg, supplies: List<Supply>, me: String, repo: Repository,
                     SupplyRow(
                         wg, supply,
                         onLevel = { repo.setLevel(wg.id, supply.id, it) },
+                        onCount = { repo.changeCount(wg.id, supply, it) },
                         onBought = { buying = supply },
                         onEdit = { editing = supply },
                     )
@@ -140,7 +145,7 @@ fun SuppliesScreen(wg: Wg, supplies: List<Supply>, me: String, repo: Repository,
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SupplyRow(wg: Wg, supply: Supply, onLevel: (Level) -> Unit, onBought: () -> Unit, onEdit: () -> Unit) {
+fun SupplyRow(wg: Wg, supply: Supply, onLevel: (Level) -> Unit, onCount: (Long) -> Unit, onBought: () -> Unit, onEdit: () -> Unit) {
     val level = supply.levelEnum
     Card(
         colors = CardDefaults.cardColors(
@@ -166,6 +171,7 @@ private fun SupplyRow(wg: Wg, supply: Supply, onLevel: (Level) -> Unit, onBought
                     Text(stringResource(R.string.bought))
                 }
             }
+            PackCounter(supply.count, onCount)
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                 Level.entries.forEachIndexed { i, l ->
                     SegmentedButton(
@@ -180,6 +186,23 @@ private fun SupplyRow(wg: Wg, supply: Supply, onLevel: (Level) -> Unit, onBought
                 }
             }
         }
+    }
+}
+
+/** "−  3 packs  +": − when one pack is used up, + for a pack found in the cupboard. */
+@Composable
+fun PackCounter(count: Long, onCount: (Long) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        IconButton(onClick = { onCount(-1) }, enabled = count > 0) {
+            Icon(Icons.Default.Remove, stringResource(R.string.used_one))
+        }
+        Text(
+            pluralStringResource(R.plurals.packs_in_stock, count.toInt(), count.toInt()),
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.width(120.dp),
+            textAlign = TextAlign.Center,
+        )
+        IconButton(onClick = { onCount(1) }) { Icon(Icons.Default.Add, stringResource(R.string.add_pack)) }
     }
 }
 
@@ -217,6 +240,8 @@ fun NameDialog(title: String, initial: String, onConfirm: (String) -> Unit, onDi
 fun PurchaseDialog(wg: Wg, supply: Supply?, me: String, repo: Repository, onDismiss: () -> Unit, onSaved: () -> Unit) {
     var itemName by rememberSaveable { mutableStateOf(supply?.name.orEmpty()) }
     var cost by rememberSaveable { mutableStateOf("") }
+    var packsText by rememberSaveable { mutableStateOf("1") }
+    val packs = packsText.toLongOrNull()?.takeIf { it in 1..999 }
     var paidBy by rememberSaveable { mutableStateOf(if (me in wg.members) me else wg.members.first()) }
     var sharedBy by remember { mutableStateOf(wg.members.toSet()) }
     val runner = rememberActionRunner()
@@ -235,6 +260,17 @@ fun PurchaseDialog(wg: Wg, supply: Supply?, me: String, repo: Repository, onDism
                         label = { Text(stringResource(R.string.what_bought)) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                    )
+                }
+                if (supply != null) {
+                    OutlinedTextField(
+                        value = packsText,
+                        onValueChange = { packsText = it.filter(Char::isDigit).take(3) },
+                        label = { Text(stringResource(R.string.packs_bought)) },
+                        singleLine = true,
+                        isError = packs == null,
+                        supportingText = { Text(stringResource(R.string.packs_bought_hint)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     )
                 }
                 OutlinedTextField(
@@ -288,14 +324,15 @@ fun PurchaseDialog(wg: Wg, supply: Supply?, me: String, repo: Repository, onDism
                 onClick = {
                     runner.run {
                         repo.recordPurchase(
-                            wg.id, supply, itemName, cents ?: 0L,
+                            wg.id, supply, itemName, if (supply != null) packs ?: 1L else 0L, cents ?: 0L,
                             paidBy = if (cents != null) paidBy else me,
                             sharedBy = if (cents != null) sharedBy.toList() else wg.members,
                         )
                         onSaved()
                     }
                 },
-                enabled = !runner.busy && costValid && itemName.isNotBlank() && (cents == null || sharedBy.isNotEmpty()),
+                enabled = !runner.busy && costValid && itemName.isNotBlank() && (cents == null || sharedBy.isNotEmpty()) &&
+                    (supply == null || packs != null),
             ) { Text(stringResource(R.string.save)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },

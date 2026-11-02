@@ -124,6 +124,26 @@
     <string name="notif_marked_low">%1$s hat %2$s als knapp markiert</string>
     <string name="notif_summary_title">%1$s: %2$d Dinge zu kaufen</string>
 
+    <string name="scan">Barcode scannen</string>
+    <string name="scan_hint">Halte die Kamera auf den Barcode</string>
+    <string name="camera_permission">FlatStock braucht die Kamera, um Barcodes zu scannen.</string>
+    <string name="allow_camera">Kamera erlauben</string>
+    <string name="scan_looking_up">Produkt wird gesucht …</string>
+    <string name="scan_which_supply">Welcher Vorrat ist das?</string>
+    <string name="scan_which_hint">Wähle den Vorrat, zu dem es zählt. Beim nächsten Mal wird der Barcode sofort erkannt, egal aus welchem Laden.</string>
+    <string name="scan_unknown_product">Unbekanntes Produkt</string>
+    <string name="scan_new_supply">Neuer Vorrat …</string>
+    <string name="scan_relink">Zählt zu einem anderen Vorrat</string>
+    <string name="done">Fertig</string>
+    <string name="used_one">Eine Packung verbraucht</string>
+    <string name="add_pack">Packung hinzufügen</string>
+    <string name="packs_bought">Gekaufte Packungen</string>
+    <string name="packs_bought_hint">z. B. 2, wenn du zwei Packungen im Angebot gekauft hast</string>
+    <plurals name="packs_in_stock">
+        <item quantity="one">%d Packung</item>
+        <item quantity="other">%d Packungen</item>
+    </plurals>
+
     <string-array name="starter_supplies">
         <item>Spülmaschinentabs</item>
         <item>Klopapier</item>

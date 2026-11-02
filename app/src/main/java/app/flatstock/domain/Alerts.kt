@@ -8,6 +8,16 @@ enum class Level {
     }
 }
 
+/**
+ * Level after the pack count changed: no packs left means out; packs arriving for something that
+ * was out make it full again; otherwise the level someone chose by hand stays.
+ */
+fun levelForCount(count: Long, current: Level): Level = when {
+    count <= 0 -> Level.OUT
+    current == Level.OUT -> Level.FULL
+    else -> current
+}
+
 /** The part of a supply the reminders look at. */
 data class SupplyState(val name: String, val level: Level, val changedBy: String, val changedAt: Long)
 

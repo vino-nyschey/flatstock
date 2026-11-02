@@ -51,7 +51,14 @@ service cloud.firestore {
         allow read, delete: if isMember(wid);
         allow create, update: if isMember(wid)
           && data().name is string && data().name.size() > 0
-          && data().level in ['FULL', 'LOW', 'OUT'];
+          && data().level in ['FULL', 'LOW', 'OUT']
+          && (!('count' in data()) || (data().count is int && data().count >= 0 && data().count <= 9999));
+      }
+
+      // Barcode -> supply it counts towards (any brand or shop).
+      match /products/{barcode} {
+        allow read, delete: if isMember(wid);
+        allow create, update: if isMember(wid) && data().supplyId is string && data().supplyId.size() > 0;
       }
 
       // Purchases and payments are append-only; the author may delete a wrong entry.

@@ -127,6 +127,26 @@
     <string name="notif_marked_low">%1$s marked %2$s as low</string>
     <string name="notif_summary_title">%1$s: %2$d things to buy</string>
 
+    <string name="scan">Scan barcode</string>
+    <string name="scan_hint">Point the camera at the barcode</string>
+    <string name="camera_permission">FlatStock needs the camera to scan barcodes.</string>
+    <string name="allow_camera">Allow camera</string>
+    <string name="scan_looking_up">Looking up product…</string>
+    <string name="scan_which_supply">Which supply is this?</string>
+    <string name="scan_which_hint">Pick the supply it counts towards. Next time this barcode is recognised at once, whatever shop it came from.</string>
+    <string name="scan_unknown_product">Unknown product</string>
+    <string name="scan_new_supply">New supply…</string>
+    <string name="scan_relink">Counts towards another supply</string>
+    <string name="done">Done</string>
+    <string name="used_one">Used one pack</string>
+    <string name="add_pack">Add a pack</string>
+    <string name="packs_bought">Packs bought</string>
+    <string name="packs_bought_hint">e.g. 2 when you bought two boxes on offer</string>
+    <plurals name="packs_in_stock">
+        <item quantity="one">%d pack</item>
+        <item quantity="other">%d packs</item>
+    </plurals>
+
     <string-array name="starter_supplies">
         <item>Dishwasher tabs</item>
         <item>Toilet paper</item>

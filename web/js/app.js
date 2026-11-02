@@ -1,7 +1,9 @@
-import { html, render, useState, useEffect } from "https://cdn.jsdelivr.net/npm/htm@3.1.1/preact/standalone.module.js";
+import { html, render, useState, useEffect, useRef } from "https://cdn.jsdelivr.net/npm/htm@3.1.1/preact/standalone.module.js";
 import { firebaseConfig, useEmulators } from "./firebase-config.js";
 import { t, setLanguage, savedLanguage, formatCents, centsInput, formatDate, starterSupplies } from "./i18n.js";
 import { balances, settle, parseCents, splitEqually, newAlerts } from "./ledger.js";
+import { startScanner } from "./scanner.js";
+import { lookupProductName } from "./off.js";
 
 // Firebase is loaded only once firebase-config.js is filled in (see README > Developers).
 const configured = useEmulators || !firebaseConfig.apiKey.startsWith("REPLACE");
@@ -234,6 +236,7 @@ function SuppliesScreen({ wg, supplies, me, showSnack }) {
             </button>
             <button class="tonal" onClick=${() => setBuying(s)}>🛒 ${t("bought")}</button>
           </div>
+          <${PackCounter} supply=${s} wg=${wg} />
           <div class="segmented" role="radiogroup">
             ${LEVELS.map((l) => html`<button role="radio" aria-checked=${s.level === l}
               class=${(s.level ?? "FULL") === l ? "on " + LEVEL_TONE[l] : ""}
@@ -253,6 +256,16 @@ function SuppliesScreen({ wg, supplies, me, showSnack }) {
   </div>`;
 }
 
+/** "−  3 packs  +": − when one pack is used up, + for a pack found in the cupboard. */
+function PackCounter({ supply, wg }) {
+  const count = supply.count ?? 0;
+  return html`<div class="counter">
+    <button class="icon" aria-label=${t("used_one")} disabled=${count <= 0} onClick=${() => repo.changeCount(wg.id, supply, -1)}>−</button>
+    <span>${t(count === 1 ? "pack_one" : "packs", count)}</span>
+    <button class="icon" aria-label=${t("add_pack")} onClick=${() => repo.changeCount(wg.id, supply, 1)}>+</button>
+  </div>`;
+}
+
 /**
  * "I bought it": optional cost, who paid (default me) and who shares it (default everyone).
  * With a supply it is also marked full again; without one the user types what was bought.
@@ -260,16 +273,18 @@ function SuppliesScreen({ wg, supplies, me, showSnack }) {
 function PurchaseDialog({ wg, supply, me, onClose, onSaved }) {
   const [itemName, setItemName] = useState(supply?.name ?? "");
   const [cost, setCost] = useState("");
+  const [packsText, setPacksText] = useState("1");
+  const packs = /^\d{1,3}$/.test(packsText) && +packsText > 0 ? +packsText : null;
   const [paidBy, setPaidBy] = useState(wg.members.includes(me) ? me : wg.members[0]);
   const [sharedBy, setSharedBy] = useState(wg.members);
   const r = useRunner();
   const cents = parseCents(cost);
   const costValid = !cost.trim() || cents != null;
   const shares = cents != null ? splitEqually(cents, sharedBy) : new Map();
-  const ok = costValid && itemName.trim() && (cents == null || sharedBy.length > 0);
+  const ok = costValid && itemName.trim() && (cents == null || sharedBy.length > 0) && (!supply || packs != null);
   const toggle = (u) => setSharedBy(sharedBy.includes(u) ? sharedBy.filter((x) => x !== u) : [...sharedBy, u]);
   const save = () => r.run(async () => {
-    await repo.recordPurchase(wg.id, supply, itemName, cents ?? 0,
+    await repo.recordPurchase(wg.id, supply, itemName, supply ? packs : 0, cents ?? 0,
       cents != null ? paidBy : me, cents != null ? sharedBy : wg.members);
     onSaved();
   });
@@ -279,6 +294,10 @@ function PurchaseDialog({ wg, supply, me, onClose, onSaved }) {
       <button class="text" disabled=${!ok || r.busy} onClick=${save}>${t("save")}</button>`}>
     ${!supply && html`<label class="field">${t("what_bought")}
       <input value=${itemName} onInput=${(e) => setItemName(e.currentTarget.value)} /></label>`}
+    ${supply && html`<label class="field">${t("packs_bought")}
+      <input inputmode="numeric" value=${packsText} class=${packs == null ? "invalid" : ""}
+        onInput=${(e) => setPacksText(e.currentTarget.value.replace(/\D/g, "").slice(0, 3))} />
+      <small>${t("packs_bought_hint")}</small></label>`}
     <label class="field">${t("cost_optional")}
       <input inputmode="decimal" placeholder="€ 0,00" value=${cost} class=${costValid ? "" : "invalid"}
         onInput=${(e) => setCost(e.currentTarget.value)} /></label>
@@ -293,6 +312,85 @@ function PurchaseDialog({ wg, supply, me, onClose, onSaved }) {
         ${shares.size ? t("each_pays", formatCents(Math.min(...shares.values())), sharedBy.length) : t("pick_someone")}</p>`
     : html`<p class="small muted">${t("no_cost_hint")}</p>`}
     ${r.message && html`<p class="error">${r.message}</p>`}
+  <//>`;
+}
+
+/** Full-screen camera view that reports the first barcode it reads. */
+function Scanner({ onCode, onClose }) {
+  const video = useRef(null);
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    let stop = null, cancelled = false;
+    startScanner(video.current, onCode)
+      .then((s) => { if (cancelled) s(); else stop = s; })
+      .catch((e) => setError(e?.name === "NotAllowedError" ? t("camera_permission") : friendlyError(e)));
+    return () => { cancelled = true; stop?.(); };
+  }, []);
+  return html`<div class="scanner">
+    <video ref=${video}></video>
+    <div class="scan-frame"></div>
+    <button class="icon close" aria-label=${t("cancel")} onClick=${onClose}>✕</button>
+    <div class="scan-bottom"><p>${error ?? t("scan_hint")}</p></div>
+  </div>`;
+}
+
+/**
+ * After a scan: a known barcode shows its supply's stock with Bought / Used one. An unknown one is
+ * looked up on Open Food Facts and the user picks which supply it counts towards, so different
+ * brands and shops all add up under one supply.
+ */
+function ScanResult({ wg, barcode, supplies, onBought, onClose }) {
+  const [state, setState] = useState({ loading: true });
+  const [selected, setSelected] = useState(null);
+  const [newName, setNewName] = useState("");
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      const product = await repo.productOnce(wg.id, barcode);
+      if (product && supplies.some((s) => s.id === product.supplyId)) { if (live) setState({ product }); return; }
+      const info = await lookupProductName(barcode);
+      if (!live) return;
+      setNewName(info?.name ?? "");
+      setState({ linking: true, info });
+    })();
+    return () => { live = false; };
+  }, [barcode]);
+
+  const spinner = html`<${Dialog} title=${t("scan_looking_up")} onClose=${onClose}><div class="loading"><div class="spinner"></div></div><//>`;
+  if (state.loading) return spinner;
+
+  if (state.linking) {
+    const info = state.info;
+    const save = () => {
+      const supplyId = selected === "" ? repo.addSupply(wg.id, newName) : selected;
+      repo.linkProduct(wg.id, barcode, supplyId, info?.name ?? newName, info?.brand ?? "");
+      setState({ product: { supplyId, name: info?.name ?? "", brand: info?.brand ?? "" } });
+    };
+    return html`<${Dialog} title=${t("scan_which_supply")} onClose=${onClose} actions=${html`
+        <button class="text" onClick=${onClose}>${t("cancel")}</button>
+        <button class="text" disabled=${selected == null || (selected === "" && !newName.trim())} onClick=${save}>${t("save")}</button>`}>
+      <p>${info ? [info.brand, info.name].filter(Boolean).join(" · ") : t("scan_unknown_product")}</p>
+      <p class="small muted">${t("scan_which_hint")}</p>
+      <div role="radiogroup">
+        ${supplies.map((s) => html`<${Radio} on=${selected === s.id} label=${s.name} onClick=${() => setSelected(s.id)} />`)}
+        <${Radio} on=${selected === ""} label=${t("scan_new_supply")} onClick=${() => setSelected("")} />
+      </div>
+      ${selected === "" && html`<input value=${newName} placeholder=${t("name")} onInput=${(e) => setNewName(e.currentTarget.value)} />`}
+    <//>`;
+  }
+
+  const supply = supplies.find((s) => s.id === state.product.supplyId);
+  if (!supply) return spinner;
+  const p = state.product;
+  const level = supply.level ?? "FULL";
+  return html`<${Dialog} title=${supply.name} onClose=${onClose} actions=${html`
+      <button class="text" onClick=${onClose}>${t("done")}</button>
+      <button class="filled" onClick=${() => onBought(supply)}>🛒 ${t("bought")}</button>`}>
+    ${p.name && p.name !== supply.name && html`<p class="small muted">${[p.brand, p.name].filter(Boolean).join(" · ")}</p>`}
+    <div class="row"><span class=${"pill " + LEVEL_TONE[level]}>${t("level_" + level)}</span>
+      ${level !== "FULL" && supply.updatedBy && html`<small class="muted">${repo.nameOf(wg, supply.updatedBy)}</small>`}</div>
+    <${PackCounter} supply=${supply} wg=${wg} />
+    <button class="text start" onClick=${() => { setSelected(null); setState({ linking: true, info: p.name ? p : null }); }}>${t("scan_relink")}</button>
   <//>`;
 }
 
@@ -500,11 +598,20 @@ function MainScreen({ wid, me, groupIds }) {
   const purchases = useLive((cb) => repo.watchPurchases(wid, cb), [wid], []);
   const payments = useLive((cb) => repo.watchPayments(wid, cb), [wid], []);
   const [alerts, clearAlerts] = useAlerts(wg, supplies, me);
+  const [scanning, setScanning] = useState(false);
+  const [scanned, setScanned] = useState(null);
+  const [buying, setBuying] = useState(null);
   const online = useOnline();
 
   if (!wg) return html`<div class="loading full-height"><div class="spinner"></div></div>`;
+  if (scanning) return html`<${Scanner} onCode=${(c) => { setScanning(false); setScanned(c); }} onClose=${() => setScanning(false)} />`;
   return html`<div class="main">
-    <header class="topbar"><h1 class="ellipsis">${wg.name}</h1></header>
+    <header class="topbar"><h1 class="ellipsis">${wg.name}</h1>
+      <button class="tonal" aria-label=${t("scan")} onClick=${() => setScanning(true)}>▥ ${t("scan_short")}</button></header>
+    ${scanned && html`<${ScanResult} wg=${wg} barcode=${scanned} supplies=${supplies}
+      onBought=${(s) => { setScanned(null); setBuying(s); }} onClose=${() => setScanned(null)} />`}
+    ${buying && html`<${PurchaseDialog} wg=${wg} supply=${buying} me=${me}
+      onClose=${() => setBuying(null)} onSaved=${() => { setBuying(null); setSnack(t("purchase_saved")); }} />`}
     ${!online && html`<div class="offline">${t("offline")}</div>`}
     ${alerts.length > 0 && html`<div class="card warn row nowrap" role="alert">
       <span class="grow">${alerts.map((s) => t(s.level === "OUT" ? "notif_marked_out" : "notif_marked_low", repo.nameOf(wg, s.updatedBy), s.name)).join(" · ")}</span>

@@ -18,6 +18,15 @@ class AlertsTest {
     }
 
     @Test
+    fun levelFollowsPackCount() {
+        assertEquals(Level.OUT, levelForCount(0, Level.FULL))
+        assertEquals(Level.OUT, levelForCount(0, Level.LOW))
+        assertEquals(Level.FULL, levelForCount(12, Level.OUT))
+        assertEquals(Level.LOW, levelForCount(1, Level.LOW))
+        assertEquals(Level.FULL, levelForCount(3, Level.FULL))
+    }
+
+    @Test
     fun summaryListsOutFirstThenLow() {
         assertEquals(listOf("Bin bags", "Oil", "Toilet paper", "Salt"), lowSummary(supplies).map { it.name })
     }

@@ -2,7 +2,8 @@
 
 Shared supplies for a flat share (WG): see what's running low, record who bought what, and split the cost.
 
-- **Supplies list.** Every common item (dishwasher tabs, toilet paper, oil, salt, …) is marked **Full**, **Low** or **Out**. Anyone in the WG can change it.
+- **Supplies list.** Every common item (dishwasher tabs, toilet paper, oil, salt, …) is marked **Full**, **Low** or **Out**, and shows how many **packs** are in stock (− when one is used up, + to add). Anyone in the WG can change it. Reaching 0 packs marks it **Out**.
+- **Barcode scanner.** Scan a product in the shop to see how many packs are at home before you buy. The first time you scan a barcode, pick which supply it counts towards. After that, Ja! salt from Rewe and salt from Aldi both count as **Salt**.
 - **Reminders.** You get a notification when a flatmate marks something low or out. You also get a summary of everything that's low, every day or on Saturdays at 9:00 (Android).
 - **Purchases.** Tap **Bought** when you buy something. You can enter what it cost, choose who paid, and tick who shares it (everyone by default). The cost is split equally among them.
 - **Settling up.** Balances are netted across all purchases, like Splitwise. **Money** shows who owes whom, and **Settle up** records a payment.
@@ -28,7 +29,9 @@ There is an Android app, and a web app for iPhone flatmates. Both use the same d
 | I want to… | Do this |
 |---|---|
 | Say something is running out | **Supplies**: tap **Low** or **Out** on the item |
-| Record that I bought it | Tap **Bought** on the item, optionally enter the cost and who shares it. The item goes back to **Full**. |
+| Record that I bought it | Tap **Bought** on the item, enter how many packs (e.g. 2 boxes on offer), optionally the cost and who shares it. The packs are added and the item goes back to **Full**. |
+| Check stock in the shop | Tap **Scan** at the top and point the camera at the barcode |
+| A pack is used up | Tap **−** on the item |
 | Record something not on the list | **Money → Add a purchase** |
 | Pay a flatmate back | **Money → Who owes whom → Settle up**. Adjust the amount if you paid only part of it. |
 | Fix a mistake | **Money → History**: tap 🗑 on an entry you made yourself |
@@ -57,8 +60,9 @@ Send bugs as GitHub issues with your phone model, the app version (shown at the 
 ## For developers
 
 ### Stack
-- **Android.** Kotlin 2.2.20, Jetpack Compose Material 3, AppCompatActivity (per-app locales), Firebase Auth (email/password plus verification), Firestore with offline cache, and WorkManager. Gradle 9.1.0, AGP 8.13.0, compile/target SDK 35, min SDK 26, JVM 17.
-- **Web.** A no-build ES-module PWA in `web/`, using Preact + htm from a CDN and Firebase JS SDK 12. Hosted on Firebase Hosting.
+- **Android.** Kotlin 2.2.20, Jetpack Compose Material 3, AppCompatActivity (per-app locales), Firebase Auth (email/password plus verification), Firestore with offline cache, WorkManager, and CameraX with ML Kit barcode scanning (on-device). Portrait only. Gradle 9.1.0, AGP 8.13.0, compile/target SDK 35, min SDK 26, JVM 17.
+- **Web.** A no-build ES-module PWA in `web/`, using Preact + htm from a CDN, Firebase JS SDK 12 and ZXing for scanning.
+- **Product names** for newly scanned barcodes come from Open Food Facts / Open Products Facts (free, no key). Hosted on Firebase Hosting.
 - **No server code.** Security is enforced by `firestore.rules`. Reminders are computed on each phone, because Cloud Functions/FCM would need the paid Blaze plan.
 
 ### Layout
@@ -78,9 +82,10 @@ firestore.rules, rules-test/   security rules and their emulator tests
 users/{uid}                 { email, name, groupIds[], activeGroupId }
 invites/{wgId}_{email}      { wgId, wgName, email, invitedBy, status: pending|accepted|declined }
 wgs/{wid}                   { name, ownerUid, members[], memberEmails{uid:email}, memberNames{uid:name} }
-wgs/{wid}/supplies/{id}     { name, level: FULL|LOW|OUT, updatedBy, updatedAt }
-wgs/{wid}/purchases/{id}    { itemName, supplyId, paidBy, amountCents, sharedBy[], createdBy, createdAt }
+wgs/{wid}/supplies/{id}     { name, level: FULL|LOW|OUT, count (packs), updatedBy, updatedAt }
+wgs/{wid}/purchases/{id}    { itemName, supplyId, packs, paidBy, amountCents, sharedBy[], createdBy, createdAt }
 wgs/{wid}/payments/{id}     { fromUid, toUid, amountCents, createdBy, createdAt }
+wgs/{wid}/products/{barcode} { supplyId, name, brand }   scanned barcode -> supply it counts towards
 ```
 Money is stored in whole cents. Balances are never stored; every device recomputes them from purchases and payments.
 

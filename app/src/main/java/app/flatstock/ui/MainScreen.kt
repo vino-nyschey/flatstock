@@ -7,9 +7,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Euro
 import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -21,7 +23,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -33,6 +37,7 @@ import app.flatstock.R
 import app.flatstock.data.Repository
 import app.flatstock.data.Supply
 import app.flatstock.work.Reminders
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,6 +50,11 @@ fun MainScreen(session: Session.Ready, repo: Repository) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     val snackbar = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var scanning by rememberSaveable { mutableStateOf(false) }
+    var scanned by rememberSaveable { mutableStateOf<String?>(null) }
+    var buying by remember { mutableStateOf<Supply?>(null) }
+    val savedText = stringResource(R.string.purchase_saved)
 
     // While the app runs, flatmates' "low"/"out" marks notify at once instead of at the next background check.
     LaunchedEffect(wg, supplies) {
@@ -52,8 +62,20 @@ fun MainScreen(session: Session.Ready, repo: Repository) {
         if (supplies.isNotEmpty()) Reminders.checkAlerts(context, current, supplies, session.uid)
     }
 
+    if (scanning) {
+        ScannerScreen(onBarcode = { scanned = it; scanning = false }, onClose = { scanning = false })
+        return
+    }
+
     Scaffold(
-        topBar = { TopAppBar(title = { Text(wg?.name ?: stringResource(R.string.app_name)) }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(wg?.name ?: stringResource(R.string.app_name)) },
+                actions = {
+                    IconButton(onClick = { scanning = true }) { Icon(Icons.Default.QrCodeScanner, stringResource(R.string.scan)) }
+                },
+            )
+        },
         bottomBar = {
             NavigationBar {
                 NavigationBarItem(
@@ -82,5 +104,20 @@ fun MainScreen(session: Session.Ready, repo: Repository) {
                 else -> WgScreen(current, session, repo)
             }
         }
+    }
+
+    val current = wg ?: return
+    scanned?.let { code ->
+        ScanResultDialog(
+            current, code, supplies, session.uid, repo,
+            onBought = { buying = it; scanned = null },
+            onClose = { scanned = null },
+        )
+    }
+    buying?.let { supply ->
+        PurchaseDialog(current, supply, session.uid, repo, onDismiss = { buying = null }, onSaved = {
+            buying = null
+            scope.launch { snackbar.showSnackbar(savedText) }
+        })
     }
 }

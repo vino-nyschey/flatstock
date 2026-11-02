@@ -2,6 +2,7 @@ package app.flatstock.data
 
 import android.util.Log
 import app.flatstock.domain.Level
+import app.flatstock.domain.levelForCount
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -28,6 +29,7 @@ private const val TAG = "Repository"
  *   wgs/{wid}/supplies/{id}       Supply
  *   wgs/{wid}/purchases/{id}      Purchase
  *   wgs/{wid}/payments/{id}       SettlePayment
+ *   wgs/{wid}/products/{barcode}  Product: which supply a scanned barcode counts towards
  *
  * Supply level changes are fire-and-forget: Firestore applies them locally at once and syncs when
  * the phone is online again. Money entries are awaited so the user sees if they failed.
@@ -45,6 +47,7 @@ class Repository {
     private fun supplies(wid: String) = wg(wid).collection("supplies")
     private fun purchases(wid: String) = wg(wid).collection("purchases")
     private fun payments(wid: String) = wg(wid).collection("payments")
+    private fun products(wid: String) = wg(wid).collection("products")
 
     // region Account
 
@@ -229,12 +232,16 @@ class Repository {
     private fun newSupply(name: String) = mapOf(
         "name" to name.trim(),
         "level" to Level.FULL.name,
+        "count" to 0L,
         "updatedBy" to uid,
         "updatedAt" to System.currentTimeMillis(),
     )
 
-    fun addSupply(wid: String, name: String) {
-        supplies(wid).add(newSupply(name)).logFailure()
+    /** Returns the new supply's id at once; the write itself syncs in the background. */
+    fun addSupply(wid: String, name: String): String {
+        val ref = supplies(wid).document()
+        ref.set(newSupply(name)).logFailure()
+        return ref.id
     }
 
     fun renameSupply(wid: String, id: String, name: String) {
@@ -251,6 +258,34 @@ class Repository {
         ).logFailure()
     }
 
+    /** Adds or removes packs (never below 0); the level follows, see [levelForCount]. */
+    fun changeCount(wid: String, supply: Supply, delta: Long) {
+        val count = (supply.count + delta).coerceAtLeast(0)
+        supplies(wid).document(supply.id).update(
+            mapOf(
+                "count" to count,
+                "level" to levelForCount(count, supply.levelEnum).name,
+                "updatedBy" to uid,
+                "updatedAt" to System.currentTimeMillis(),
+            )
+        ).logFailure()
+    }
+
+    // endregion
+    // region Scanned products
+
+    suspend fun productOnce(wid: String, barcode: String): Product? =
+        runCatching { products(wid).document(barcode.replace('/', '_')).get().await() }.getOrNull()
+            ?.takeIf { it.exists() }
+            ?.toObject(Product::class.java)?.copy(barcode = barcode)
+
+    /** Remembers that [barcode] counts towards [supplyId]. */
+    fun linkProduct(wid: String, barcode: String, supplyId: String, name: String, brand: String) {
+        products(wid).document(barcode.replace('/', '_'))
+            .set(mapOf("supplyId" to supplyId, "name" to name.trim(), "brand" to brand.trim()))
+            .logFailure()
+    }
+
     // endregion
     // region Purchases and settling up
 
@@ -264,8 +299,10 @@ class Repository {
             .listFlow { it.toObject(SettlePayment::class.java)?.copy(id = it.id) }
             .map { list -> list.sortedByDescending { it.createdAt } }
 
-    /** Records the purchase and marks the supply as full again, in one write. */
-    suspend fun recordPurchase(wid: String, supply: Supply?, itemName: String, amountCents: Long, paidBy: String, sharedBy: List<String>) {
+    /** Records the purchase, adds [packs] to the supply's stock and marks it full again, in one write. */
+    suspend fun recordPurchase(
+        wid: String, supply: Supply?, itemName: String, packs: Long, amountCents: Long, paidBy: String, sharedBy: List<String>,
+    ) {
         val now = System.currentTimeMillis()
         val batch = db.batch()
         batch.set(
@@ -273,6 +310,7 @@ class Repository {
             mapOf(
                 "supplyId" to supply?.id.orEmpty(),
                 "itemName" to itemName.trim(),
+                "packs" to packs,
                 "paidBy" to paidBy,
                 "amountCents" to amountCents,
                 "sharedBy" to sharedBy.distinct(),
@@ -283,7 +321,7 @@ class Repository {
         if (supply != null) {
             batch.update(
                 supplies(wid).document(supply.id),
-                mapOf("level" to Level.FULL.name, "updatedBy" to uid, "updatedAt" to now),
+                mapOf("level" to Level.FULL.name, "count" to FieldValue.increment(packs), "updatedBy" to uid, "updatedAt" to now),
             )
         }
         batch.commit().await()

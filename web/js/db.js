@@ -7,6 +7,7 @@
 //   wgs/{wid}/supplies/{id}       { name, level: FULL|LOW|OUT, updatedBy, updatedAt }
 //   wgs/{wid}/purchases/{id}      { supplyId, itemName, paidBy, amountCents, sharedBy[], createdBy, createdAt }
 //   wgs/{wid}/payments/{id}       { fromUid, toUid, amountCents, createdBy, createdAt }
+//   wgs/{wid}/products/{barcode}  { supplyId, name, brand }: which supply a scanned barcode counts towards
 //
 // Supply level changes are fire-and-forget like on Android; money entries are awaited.
 
@@ -18,11 +19,12 @@ import {
 import {
   initializeFirestore, getFirestore, connectFirestoreEmulator, persistentLocalCache, persistentMultipleTabManager,
   collection, doc, onSnapshot, getDoc, setDoc, updateDoc, addDoc, deleteDoc, writeBatch,
-  query, where, arrayUnion, arrayRemove, deleteField,
+  query, where, arrayUnion, arrayRemove, deleteField, increment,
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 import { firebaseConfig, useEmulators, emulatorConfig } from "./firebase-config.js";
+import { levelForCount } from "./ledger.js";
 
-export const APP_VERSION = "web-0.1.0";
+export const APP_VERSION = "web-0.2.0";
 
 const app = initializeApp(useEmulators ? emulatorConfig : firebaseConfig);
 export const auth = getAuth(app);
@@ -47,6 +49,7 @@ const wg = (wid) => doc(db, "wgs", wid);
 const supplies = (wid) => collection(db, "wgs", wid, "supplies");
 const purchases = (wid) => collection(db, "wgs", wid, "purchases");
 const payments = (wid) => collection(db, "wgs", wid, "payments");
+const products = (wid) => collection(db, "wgs", wid, "products");
 
 const logFailure = (p) => p.catch((e) => console.warn("write failed", e));
 const listen = (q, map, cb) =>
@@ -123,7 +126,7 @@ async function myName() {
   try { return (await getDoc(doc(users(), uid()))).data()?.name ?? ""; } catch { return ""; }
 }
 
-const newSupply = (name) => ({ name: name.trim(), level: "FULL", updatedBy: uid(), updatedAt: Date.now() });
+const newSupply = (name) => ({ name: name.trim(), level: "FULL", count: 0, updatedBy: uid(), updatedAt: Date.now() });
 
 /** Creates the WG with a starter list of supplies (in the user's language). */
 export async function createWg(name, starterSupplies) {
@@ -199,7 +202,32 @@ export function watchSupplies(wid, cb) {
     cb(list.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))));
 }
 
-export const addSupply = (wid, name) => logFailure(addDoc(supplies(wid), newSupply(name)));
+/** Returns the new supply's id at once; the write itself syncs in the background. */
+export function addSupply(wid, name) {
+  const ref = doc(supplies(wid));
+  logFailure(setDoc(ref, newSupply(name)));
+  return ref.id;
+}
+
+/** Adds or removes packs (never below 0); the level follows, see levelForCount. */
+export function changeCount(wid, supply, delta) {
+  const count = Math.max(0, (supply.count ?? 0) + delta);
+  logFailure(updateDoc(doc(supplies(wid), supply.id),
+    { count, level: levelForCount(count, supply.level ?? "FULL"), updatedBy: uid(), updatedAt: Date.now() }));
+}
+
+const productDoc = (wid, barcode) => doc(products(wid), barcode.replaceAll("/", "_"));
+
+export async function productOnce(wid, barcode) {
+  try {
+    const snap = await getDoc(productDoc(wid, barcode));
+    return snap.exists() ? { barcode, ...snap.data() } : null;
+  } catch { return null; }
+}
+
+/** Remembers that barcode counts towards supplyId. */
+export const linkProduct = (wid, barcode, supplyId, name, brand) =>
+  logFailure(setDoc(productDoc(wid, barcode), { supplyId, name: name.trim(), brand: brand.trim() }));
 export const renameSupply = (wid, id, name) => logFailure(updateDoc(doc(supplies(wid), id), { name: name.trim() }));
 export const deleteSupply = (wid, id) => logFailure(deleteDoc(doc(supplies(wid), id)));
 export const setLevel = (wid, id, level) =>
@@ -213,19 +241,20 @@ export const watchPurchases = (wid, cb) => listen(purchases(wid), withId, (l) =>
 export const watchPayments = (wid, cb) => listen(payments(wid), withId, (l) => cb(newestFirst(l)));
 
 /** Records the purchase and marks the supply as full again, in one write. */
-export async function recordPurchase(wid, supply, itemName, amountCents, paidBy, sharedBy) {
+export async function recordPurchase(wid, supply, itemName, packs, amountCents, paidBy, sharedBy) {
   const now = Date.now();
   const batch = writeBatch(db);
   batch.set(doc(purchases(wid)), {
     supplyId: supply?.id ?? "",
     itemName: itemName.trim(),
+    packs,
     paidBy,
     amountCents,
     sharedBy: [...new Set(sharedBy)],
     createdBy: uid(),
     createdAt: now,
   });
-  if (supply) batch.update(doc(supplies(wid), supply.id), { level: "FULL", updatedBy: uid(), updatedAt: now });
+  if (supply) batch.update(doc(supplies(wid), supply.id), { level: "FULL", count: increment(packs), updatedBy: uid(), updatedAt: now });
   await batch.commit();
 }
 

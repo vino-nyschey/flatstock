@@ -28,6 +28,8 @@ data class Supply(
     @get:Exclude val id: String = "",
     val name: String = "",
     val level: String = Level.FULL.name,
+    /** Packs in stock, e.g. 2 boxes of dishwasher tabs. */
+    val count: Long = 0L,
     /** uid of whoever last changed the level, and when. */
     val updatedBy: String = "",
     val updatedAt: Long = 0L,
@@ -42,6 +44,8 @@ data class Purchase(
     @get:Exclude val id: String = "",
     val supplyId: String = "",
     val itemName: String = "",
+    /** Packs bought; 0 for purchases recorded before packs were counted. */
+    val packs: Long = 0L,
     val paidBy: String = "",
     val amountCents: Long = 0L,
     val sharedBy: List<String> = emptyList(),
@@ -75,3 +79,11 @@ data class Invite(
 
 /** The WGs a user belongs to and the one currently shown. */
 data class UserGroups(val groupIds: List<String>, val activeId: String?, val name: String)
+
+/** A scanned barcode and the supply it counts towards, so Ja! salt and Aldi salt both count as "Salt". */
+data class Product(
+    @get:Exclude val barcode: String = "",
+    val supplyId: String = "",
+    val name: String = "",
+    val brand: String = "",
+)

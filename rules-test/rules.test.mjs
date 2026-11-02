@@ -127,6 +127,19 @@ test("a declined invitation no longer lets you join", async () => {
   await assertFails(updateDoc(doc(cara(), "wgs", WG), { members: arrayUnion("cara"), "memberEmails.cara": "cara@x.de" }));
 });
 
+test("pack counts and scanned products", async () => {
+  const s1 = (db) => doc(db, "wgs", WG, "supplies", "s1");
+  await assertSucceeds(updateDoc(s1(ben()), { count: 12, level: "FULL" }));
+  await assertFails(updateDoc(s1(ben()), { count: -1 }));
+  await assertFails(updateDoc(s1(ben()), { count: 1.5 }));
+  const p = (db) => doc(db, "wgs", WG, "products", "4001234567890");
+  await assertSucceeds(setDoc(p(ben()), { supplyId: "s1", name: "Ja! Salz", brand: "Ja!" }));
+  await assertSucceeds(getDoc(p(anna())));
+  await assertFails(getDoc(p(eve())));
+  await assertFails(setDoc(p(eve()), { supplyId: "s1", name: "x", brand: "" }));
+  await assertFails(setDoc(p(ben()), { name: "no supply" }));
+});
+
 test("user profiles are private", async () => {
   await assertSucceeds(setDoc(doc(ben(), "users", "ben"), { email: "ben@x.de", groupIds: [WG], activeGroupId: WG }));
   await assertFails(getDoc(doc(anna(), "users", "ben")));

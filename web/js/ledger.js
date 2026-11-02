@@ -77,5 +77,8 @@ const outFirst = (a, b) => (b.level === "OUT") - (a.level === "OUT") || byKey(a.
 export const newAlerts = (supplies, since, me) =>
   supplies.filter((s) => s.level !== "FULL" && s.updatedAt > since && s.updatedBy !== me).sort(outFirst);
 
+/** Level after the pack count changed; see levelForCount in Alerts.kt. */
+export const levelForCount = (count, current) => (count <= 0 ? "OUT" : current === "OUT" ? "FULL" : current);
+
 /** Everything currently low or out, out first. */
 export const lowSummary = (supplies) => supplies.filter((s) => s.level !== "FULL").sort(outFirst);
