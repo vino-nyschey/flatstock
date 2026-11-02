@@ -1,0 +1,96 @@
+rules_version = '2';
+
+// Deployed with `firebase deploy --only firestore:rules`; tested in rules-test/.
+// Only members of a WG can read or write its data. People join only through an invitation
+// sent to their (verified) email address.
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+    function myEmail() { return request.auth.token.email; }
+    function wgData(wid) { return get(/databases/$(db)/documents/wgs/$(wid)).data; }
+    function isMember(wid) { return signedIn() && me() in wgData(wid).members; }
+    // Current or former member: still appears in old purchases and can be settled with.
+    function knownIn(wid, uid) { return uid in wgData(wid).memberEmails; }
+    function data() { return request.resource.data; }
+    function isCents(v) { return v is int && v >= 0 && v <= 100000000; }
+
+    match /users/{uid} {
+      allow read, write: if signedIn() && me() == uid;
+    }
+
+    match /wgs/{wid} {
+      allow create: if signedIn()
+        && data().ownerUid == me()
+        && data().members == [me()]
+        && data().name is string && data().name.size() > 0;
+
+      allow read: if signedIn() && me() in resource.data.members;
+
+      allow update: if signedIn() && (
+        // Members may rename the WG, set their own name or leave. They can't add anyone,
+        // remove anyone but themselves, or change the owner.
+        (me() in resource.data.members
+          && data().ownerUid == resource.data.ownerUid
+          && data().members.removeAll(resource.data.members).size() == 0
+          && resource.data.members.removeAll(data().members).hasOnly([me()])
+          && data().memberEmails == resource.data.memberEmails)
+        ||
+        // Someone with a verified email that was invited may add exactly themselves.
+        (request.auth.token.email_verified == true
+          && exists(/databases/$(db)/documents/invites/$(wid + '_' + myEmail()))
+          && get(/databases/$(db)/documents/invites/$(wid + '_' + myEmail())).data.status == 'pending'
+          && data().diff(resource.data).affectedKeys().hasOnly(['members', 'memberEmails', 'memberNames'])
+          && data().members.hasAll(resource.data.members)
+          && data().members.removeAll(resource.data.members).hasOnly([me()])
+          && data().memberEmails[me()] == myEmail())
+      );
+
+      match /supplies/{id} {
+        allow read, delete: if isMember(wid);
+        allow create, update: if isMember(wid)
+          && data().name is string && data().name.size() > 0
+          && data().level in ['FULL', 'LOW', 'OUT'];
+      }
+
+      // Purchases and payments are append-only; the author may delete a wrong entry.
+      match /purchases/{id} {
+        allow read: if isMember(wid);
+        allow create: if isMember(wid)
+          && data().createdBy == me()
+          && isCents(data().amountCents)
+          && knownIn(wid, data().paidBy)
+          && data().sharedBy is list && data().sharedBy.size() > 0
+          && data().sharedBy.hasOnly(wgData(wid).members);
+        allow delete: if isMember(wid) && resource.data.createdBy == me();
+      }
+
+      match /payments/{id} {
+        allow read: if isMember(wid);
+        allow create: if isMember(wid)
+          && data().createdBy == me()
+          && isCents(data().amountCents) && data().amountCents > 0
+          && data().fromUid != data().toUid
+          && knownIn(wid, data().fromUid)
+          && knownIn(wid, data().toUid);
+        allow delete: if isMember(wid) && resource.data.createdBy == me();
+      }
+    }
+
+    match /invites/{inviteId} {
+      allow create: if isMember(data().wgId)
+        && inviteId == data().wgId + '_' + data().email
+        && data().status == 'pending';
+      allow get: if signedIn()
+        && (resource.data.email == myEmail() || isMember(resource.data.wgId));
+      allow list: if signedIn() && (resource.data.email == myEmail() || isMember(resource.data.wgId));
+      allow update: if signedIn() && (
+        isMember(resource.data.wgId)
+        || (resource.data.email == myEmail()
+            && data().diff(resource.data).affectedKeys().hasOnly(['status']))
+      );
+      allow delete: if isMember(resource.data.wgId);
+    }
+  }
+}
