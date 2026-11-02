@@ -3,11 +3,11 @@
 // Until they are filled in, the app shows a "not set up" page.
 export const firebaseConfig = {
   apiKey: "REPLACE_ME",
-  authDomain: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: "",
+  authDomain: "flatstock-wg.firebaseapp.com",
+  projectId: "flatstock-wg",
+  storageBucket: "flatstock-wg.firebasestorage.app",
+  messagingSenderId: "296136520379",
+  appId: "1:296136520379:web:318c45d926227f8e762f9e",
 };
 
 // For local testing: http://localhost:5000/?emulator talks to `firebase emulators:start` instead
