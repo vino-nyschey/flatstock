@@ -17,3 +17,6 @@ google-services.json
 .firebase/
 *-debug.log
 node_modules/
+
+# Firebase web config: kept local, deployed to hosting from this folder
+web/js/firebase-config.js

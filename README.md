@@ -100,7 +100,7 @@ Money is stored in whole cents. Balances are never stored; every device recomput
 2. In **Authentication**, enable **Email/Password**.
 3. Create a **Firestore** database (region `eur3` or `europe-west3`).
 4. Add an **Android app** with package `app.flatstock`, download `google-services.json` and put it in `app/`. It is git-ignored.
-5. Add a **Web app** and copy its config into `web/js/firebase-config.js`.
+5. Add a **Web app**. Copy `web/js/firebase-config.example.js` to `web/js/firebase-config.js` (git-ignored) and paste its config there. In Google Cloud > Credentials, restrict that browser key to your hosting domains and to the Identity Toolkit, Token Service and Firestore APIs.
 6. Add `.firebaserc` with `{"projects":{"default":"<project-id>"}}`. Update `web_url` in `app/src/main/res/values/strings.xml` to the hosting URL.
 7. Deploy: `firebase deploy --only firestore:rules,hosting`.
 
